@@ -25,11 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const ytSearchInput = document.getElementById('ytSearchInput');
   const btnPlaySearch = document.getElementById('btnPlaySearch');
   const btnClearSearch = document.getElementById('btnClearSearch');
+  const btnOpenDirect = document.getElementById('btnOpenDirect');
   const presetChips = document.querySelectorAll('.preset-chip');
+  const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+  const ytSearchResults = document.getElementById('ytSearchResults');
 
-  const plexUrlInput = document.getElementById('plexUrlInput');
-  const btnSavePlexUrl = document.getElementById('btnSavePlexUrl');
-  const btnOpenPlex = document.getElementById('btnOpenPlex');
+  let currentVideoId = 'M576WGiDBdQ';
+  let currentVideoTitle = '⚡ Cybertruck Off-Road';
 
   // --- 1. Passenger Safety Confirmation Gate ---
   function checkSafetyConfirmation() {
@@ -79,8 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- 3. YouTube Embed Video Parser & Player ---
   function extractVideoId(input) {
+    if (!input) return null;
     const raw = input.trim();
-    if (!raw) return 'jfKfPfyJRdk'; // Default Lofi Girl
+    if (!raw) return null;
 
     // Direct 11-char ID
     if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) {
@@ -103,36 +106,156 @@ document.addEventListener('DOMContentLoaded', () => {
     const shortsMatch = raw.match(/shorts\/([a-zA-Z0-9_-]{11})/);
     if (shortsMatch) return shortsMatch[1];
 
-    // If text query, return null so we can build a search embed or playlist
     return null;
   }
 
-  function playYouTube(queryOrId) {
-    const videoId = extractVideoId(queryOrId);
+  function playYouTube(videoId, title) {
+    if (!videoId) return;
+    currentVideoId = videoId;
+    currentVideoTitle = title || currentVideoTitle;
 
-    if (videoId) {
-      ytIframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0&playsinline=1`;
-      localStorage.setItem(STORAGE.LAST_YT_VIDEO, videoId);
+    ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0&playsinline=1&origin=https://wesley5n1p35.github.io`;
+    localStorage.setItem(STORAGE.LAST_YT_VIDEO, videoId);
+
+    if (nowPlayingTitle) {
+      nowPlayingTitle.textContent = currentVideoTitle;
+    }
+
+    // Highlight matching chip if any
+    presetChips.forEach(c => {
+      if (c.dataset.vid === videoId) {
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+
+  // Format seconds to mm:ss
+  function formatDuration(sec) {
+    if (!sec || isNaN(sec)) return '';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }
+
+  // Search YouTube by video name / topic
+  async function searchYouTube(query) {
+    if (!ytSearchResults) return;
+
+    ytSearchResults.style.display = 'block';
+    ytSearchResults.innerHTML = `
+      <div style="grid-column: 1/-1; padding: 18px; text-align: center; color: var(--text-muted); font-size: 14px;">
+        🔍 Searching for "<strong>${escapeHtml(query)}</strong>"...
+      </div>
+    `;
+
+    try {
+      const resp = await fetch(`https://api.piped.private.coffee/search?q=${encodeURIComponent(query)}&filter=all`);
+      if (!resp.ok) throw new Error('Search failed');
+      const data = await resp.json();
+
+      const streams = (data.items || []).filter(item => item.type === 'stream' && item.url);
+
+      if (streams.length === 0) {
+        ytSearchResults.innerHTML = `
+          <div style="grid-column: 1/-1; padding: 18px; text-align: center; color: var(--text-muted); font-size: 14px;">
+            No direct video results found for "<strong>${escapeHtml(query)}</strong>".
+            <div style="margin-top: 10px;">
+              <a href="https://m.youtube.com/results?search_query=${encodeURIComponent(query)}" target="_blank" class="btn btn-secondary" style="display:inline-block; font-size:13px; padding: 8px 16px;">
+                Open in YouTube ↗
+              </a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Auto-play the first result
+      const first = streams[0];
+      const firstId = first.url.replace('/watch?v=', '');
+      playYouTube(firstId, first.title);
+      if (ytSearchInput) ytSearchInput.value = first.title;
+
+      // Render search result cards
+      ytSearchResults.innerHTML = streams.slice(0, 8).map(v => {
+        const vidId = v.url.replace('/watch?v=', '');
+        const duration = formatDuration(v.duration);
+        return `
+          <div class="search-result-card" data-vid="${vidId}" data-title="${escapeHtml(v.title)}">
+            <div class="search-result-thumb-box">
+              <img src="${v.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`}" alt="${escapeHtml(v.title)}" loading="lazy">
+              ${duration ? `<span class="search-result-duration">${duration}</span>` : ''}
+            </div>
+            <div class="search-result-meta">
+              <div class="search-result-title">${escapeHtml(v.title)}</div>
+              <div class="search-result-channel">${escapeHtml(v.uploaderName || '')}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Wire up card clicks
+      ytSearchResults.querySelectorAll('.search-result-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const vid = card.dataset.vid;
+          const title = card.dataset.title;
+          if (vid) {
+            if (ytSearchInput) ytSearchInput.value = title;
+            playYouTube(vid, title);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      });
+
+    } catch (err) {
+      console.warn('Direct search error, providing fallback:', err);
+      ytSearchResults.innerHTML = `
+        <div style="grid-column: 1/-1; padding: 18px; text-align: center; color: var(--text-muted); font-size: 14px;">
+          Search timed out. You can open search results directly:
+          <div style="margin-top: 10px;">
+            <a href="https://m.youtube.com/results?search_query=${encodeURIComponent(query)}" class="btn btn-primary" style="display:inline-block; font-size:13px; padding: 8px 16px;">
+              View "${escapeHtml(query)}" on YouTube ↗
+            </a>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, m => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[m]);
+  }
+
+  function handleSearchOrPlay() {
+    const raw = (ytSearchInput ? ytSearchInput.value.trim() : '');
+    if (!raw) return;
+
+    const directId = extractVideoId(raw);
+    if (directId) {
+      // It's a YouTube link or ID
+      if (ytSearchResults) ytSearchResults.style.display = 'none';
+      playYouTube(directId, 'YouTube Video');
     } else {
-      // YouTube Embed search query player
-      const encodedQuery = encodeURIComponent(queryOrId.trim());
-      ytIframe.src = `https://www.youtube-nocookie.com/embed?listType=search&list=${encodedQuery}&autoplay=1&playsinline=1`;
+      // It's a video title or search phrase
+      searchYouTube(raw);
     }
   }
 
   if (btnPlaySearch && ytSearchInput) {
-    btnPlaySearch.addEventListener('click', () => {
-      if (ytSearchInput.value.trim()) {
-        playYouTube(ytSearchInput.value);
-      }
-    });
+    btnPlaySearch.addEventListener('click', handleSearchOrPlay);
 
     ytSearchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (ytSearchInput.value.trim()) {
-          playYouTube(ytSearchInput.value);
-        }
+        handleSearchOrPlay();
       }
     });
 
@@ -143,10 +266,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (btnOpenDirect) {
+    btnOpenDirect.addEventListener('click', () => {
+      const inputVal = (ytSearchInput ? ytSearchInput.value.trim() : '');
+      const directId = extractVideoId(inputVal) || currentVideoId;
+      if (inputVal && !extractVideoId(inputVal)) {
+        window.location.href = `https://m.youtube.com/results?search_query=${encodeURIComponent(inputVal)}`;
+      } else {
+        window.location.href = `https://m.youtube.com/watch?v=${directId}`;
+      }
+    });
+  }
+
   if (btnClearSearch && ytSearchInput) {
     btnClearSearch.addEventListener('click', () => {
       ytSearchInput.value = '';
       btnClearSearch.style.display = 'none';
+      if (ytSearchResults) ytSearchResults.style.display = 'none';
       ytSearchInput.focus();
     });
   }
@@ -154,20 +290,23 @@ document.addEventListener('DOMContentLoaded', () => {
   presetChips.forEach(chip => {
     chip.addEventListener('click', () => {
       const vid = chip.dataset.vid;
+      const title = chip.dataset.title || chip.textContent.trim();
       if (vid) {
         if (ytSearchInput) {
-          ytSearchInput.value = vid;
+          // Show the friendly name of the video in the search bar, NOT the weird ID code!
+          ytSearchInput.value = title;
           if (btnClearSearch) btnClearSearch.style.display = 'block';
         }
-        playYouTube(vid);
+        if (ytSearchResults) ytSearchResults.style.display = 'none';
+        playYouTube(vid, title);
       }
     });
   });
 
   // Restore last video if available
   const lastVideo = localStorage.getItem(STORAGE.LAST_YT_VIDEO);
-  if (lastVideo && lastVideo !== 'jfKfPfyJRdk') {
-    ytIframe.src = `https://www.youtube-nocookie.com/embed/${lastVideo}?autoplay=0&enablejsapi=1&rel=0&playsinline=1`;
+  if (lastVideo) {
+    currentVideoId = lastVideo;
   }
 
   // --- 4. Plex Configuration & Launcher ---

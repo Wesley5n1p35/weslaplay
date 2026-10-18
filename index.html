@@ -91,31 +91,43 @@
         <div class="search-toolbar">
           <div class="search-input-wrapper">
             <span class="search-icon">🔍</span>
-            <input type="text" id="ytSearchInput" placeholder="Paste YouTube link, video ID, or search topic (e.g. Lofi, Car Reviews)...">
+            <input type="text" id="ytSearchInput" placeholder="Paste YouTube link, video ID, or search topic...">
             <button id="btnClearSearch" class="btn-clear" style="display:none;">✕</button>
           </div>
-          <button id="btnPlaySearch" class="btn btn-primary">Play Video</button>
+          <button id="btnPlaySearch" class="btn btn-primary">Play</button>
+          <button id="btnOpenDirect" class="btn btn-secondary" title="Play directly on YouTube without embed restrictions">Open in YouTube ↗</button>
         </div>
 
         <!-- Embedded In-Browser Player -->
         <div class="video-player-container">
           <iframe id="ytIframe" 
-            src="https://www.youtube-nocookie.com/embed/jfKfPfyJRdk?autoplay=1&enablejsapi=1&rel=0&playsinline=1" 
+            src="https://www.youtube.com/embed/M576WGiDBdQ?autoplay=1&enablejsapi=1&rel=0&playsinline=1&origin=https://wesley5n1p35.github.io" 
             title="YouTube Player" 
+            referrerpolicy="strict-origin-when-cross-origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
             allowfullscreen>
           </iframe>
         </div>
 
+        <!-- Now Playing Bar -->
+        <div class="now-playing-bar" id="nowPlayingBar">
+          <span class="now-playing-dot"></span>
+          <span class="now-playing-label">Now Playing:</span>
+          <span class="now-playing-title" id="nowPlayingTitle">⚡ Cybertruck Off-Road</span>
+        </div>
+
         <!-- Quick Tap Channel Presets -->
         <div class="presets-row">
           <span class="presets-label">Quick Watch:</span>
-          <button class="preset-chip" data-vid="jfKfPfyJRdk">🎵 Lofi Girl 24/7</button>
-          <button class="preset-chip" data-vid="21X5lGlDOfg">🚀 NASA Earth Live</button>
-          <button class="preset-chip" data-vid="M576WGiDBdQ">⚡ Cybertruck Off-Road</button>
-          <button class="preset-chip" data-vid="f3tzRZZ3R-k">🏎️ Nürburgring Hot Lap</button>
-          <button class="preset-chip" data-vid="5qap5aO4i9A">🎧 Synthwave Chill</button>
+          <button class="preset-chip active" data-vid="M576WGiDBdQ" data-title="⚡ Cybertruck Off-Road">⚡ Cybertruck Off-Road</button>
+          <button class="preset-chip" data-vid="f3tzRZZ3R-k" data-title="🏎️ Nürburgring Hot Lap">🏎️ Nürburgring Hot Lap</button>
+          <button class="preset-chip" data-vid="21X5lGlDOfg" data-title="🚀 NASA Rocket Launch">🚀 NASA Rocket Launch</button>
+          <button class="preset-chip" data-vid="5qap5aO4i9A" data-title="🎧 Chill Lofi Beats">🎧 Chill Lofi Beats</button>
+          <button class="preset-chip" data-vid="kJQP7kiw5Fk" data-title="🎵 Top Hits Music">🎵 Top Hits Music</button>
         </div>
+
+        <!-- Search Results Grid (Populated when searching video name) -->
+        <div id="ytSearchResults" class="search-results-grid" style="display:none;"></div>
 
       </div>
     </section>
