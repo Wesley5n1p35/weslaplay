@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0b0e">
+  <title>WeslaPlay — Tesla YouTube, Plex & Netflix Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Passenger Safety Confirmation Modal -->
+  <div id="safetyModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-badge">PASSENGER USE ONLY</div>
+      <h2>Passenger Safety Notice</h2>
+      <p class="modal-text">
+        In-car video playback and controls are intended <strong>strictly for passengers</strong> while the vehicle is in motion. 
+        The driver must remain completely focused on the road at all times.
+      </p>
+      
+      <div class="checkbox-container">
+        <label class="custom-checkbox">
+          <input type="checkbox" id="passengerCheck">
+          <span class="checkmark"></span>
+          <span class="label-text">I confirm I am a passenger, NOT the driver.</span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btnAcknowledge" class="btn btn-primary" disabled>Acknowledge & Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="tesla-icon">
+          <path d="M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.193.354-4.339 1.793 0 0-2.15-.807-3.232-2.43C5.274 2.43 9.51 2.336 9.51 2.336L12 5.357z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">WeslaPlay</h1>
+        <span class="brand-subtitle">YouTube • Plex • Netflix</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="tabYoutube" id="btnTabYt">
+        <span class="tab-icon">▶️</span>
+        <span>YouTube</span>
+      </button>
+      <button class="nav-tab" data-tab="tabPlex" id="btnTabPlex">
+        <span class="tab-icon">🎬</span>
+        <span>Plex</span>
+      </button>
+      <button class="nav-tab" data-tab="tabNetflix" id="btnTabNetflix">
+        <span class="tab-icon">🍿</span>
+        <span>Netflix</span>
+      </button>
+    </nav>
+
+    <!-- Theater Mode Button (Optional for Parked Fullscreen) -->
+    <button id="btnTheaterBreakout" class="btn btn-theater-sm" title="Optional borderless fullscreen when parked">
+      ⛶ Theater Mode (Parked)
+    </button>
+  </header>
+
+  <!-- Main App Content -->
+  <main class="app-container">
+
+    <!-- Mode Badge -->
+    <div class="status-banner">
+      <div class="status-indicator">
+        <span class="status-dot-live"></span>
+        <span class="status-label">In-Car Browser Active (Drive-Compatible)</span>
+      </div>
+      <span class="status-hint">Run in the regular browser window so it stays open while driving.</span>
+    </div>
+
+    <!-- TAB 1: YOUTUBE IN-BROWSER WATCHER -->
+    <section id="tabYoutube" class="tab-pane active">
+      <div class="player-card">
+        
+        <div class="search-toolbar">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="ytSearchInput" placeholder="Paste YouTube link, video ID, or search topic (e.g. Lofi, Car Reviews)...">
+            <button id="btnClearSearch" class="btn-clear" style="display:none;">✕</button>
+          </div>
+          <button id="btnPlaySearch" class="btn btn-primary">Play Video</button>
+        </div>
+
+        <!-- Embedded In-Browser Player -->
+        <div class="video-player-container">
+          <iframe id="ytIframe" 
+            src="https://www.youtube-nocookie.com/embed/jfKfPfyJRdk?autoplay=1&enablejsapi=1&rel=0&playsinline=1" 
+            title="YouTube Player" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            allowfullscreen>
+          </iframe>
+        </div>
+
+        <!-- Quick Tap Channel Presets -->
+        <div class="presets-row">
+          <span class="presets-label">Quick Watch:</span>
+          <button class="preset-chip" data-vid="jfKfPfyJRdk">🎵 Lofi Girl 24/7</button>
+          <button class="preset-chip" data-vid="21X5lGlDOfg">🚀 NASA Earth Live</button>
+          <button class="preset-chip" data-vid="M576WGiDBdQ">⚡ Cybertruck Off-Road</button>
+          <button class="preset-chip" data-vid="f3tzRZZ3R-k">🏎️ Nürburgring Hot Lap</button>
+          <button class="preset-chip" data-vid="5qap5aO4i9A">🎧 Synthwave Chill</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: PLEX WATCHER -->
+    <section id="tabPlex" class="tab-pane">
+      <div class="service-panel plex-panel">
+        <div class="panel-header">
+          <div class="panel-icon plex-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L3 6.8v10.4L12 22l9-4.8V6.8L12 2zm0 2.2l6.8 3.6L12 11.4 5.2 7.8 12 4.2zm-7 5.2l6 3.2v7l-6-3.2V9.4zm8 10.2v-7l6-3.2v7l-6 3.2z"/></svg>
+          </div>
+          <div>
+            <h2>Plex Web Client</h2>
+            <p>Access your personal movie library, TV series, music, and Plex free live TV.</p>
+          </div>
+        </div>
+
+        <div class="server-config-card">
+          <label for="plexUrlInput">Plex Web Address:</label>
+          <div class="input-row">
+            <input type="text" id="plexUrlInput" value="https://app.plex.tv/desktop" placeholder="https://app.plex.tv/desktop">
+            <button id="btnSavePlexUrl" class="btn btn-secondary">Save Default</button>
+          </div>
+          <span class="field-hint">Use official Plex Web Cloud (app.plex.tv) or direct server IP if connected to car Wi-Fi.</span>
+        </div>
+
+        <div class="panel-actions">
+          <button id="btnOpenPlex" class="btn btn-launch btn-plex-color">
+            Open Plex Web Client ➔
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: NETFLIX WATCHER -->
+    <section id="tabNetflix" class="tab-pane">
+      <div class="service-panel netflix-panel">
+        <div class="panel-header">
+          <div class="panel-icon netflix-icon">
+            <span>N</span>
+          </div>
+          <div>
+            <h2>Netflix Watcher</h2>
+            <p>Stream Netflix movies and original series directly on your Tesla display.</p>
+          </div>
+        </div>
+
+        <div class="netflix-features">
+          <div class="feature-card">
+            <span class="feat-icon">⚡</span>
+            <h4>Direct Browser Launch</h4>
+            <p>Runs in the native browser tab to avoid theater gear locks.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feat-icon">🔑</span>
+            <h4>Persistent Session</h4>
+            <p>Sign in once with your account; cookies are saved in the car.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feat-icon">🔊</span>
+            <h4>Full Audio Immersion</h4>
+            <p>Outputs clean audio through Tesla’s premium speaker system.</p>
+          </div>
+        </div>
+
+        <div class="panel-actions">
+          <a href="https://www.netflix.com/browse" class="btn btn-launch btn-netflix-color">
+            Launch Netflix ➔
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer with Reset Safety button -->
+    <footer class="app-footer">
+      <p>WeslaPlay • 100% Free & Open Source • Hosted on GitHub Pages</p>
+      <button id="btnResetSafety" class="btn-link">Reset Passenger Disclaimer</button>
+    </footer>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
